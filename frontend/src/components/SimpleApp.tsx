@@ -21,21 +21,67 @@ function SimpleApp() {
   const [priceHistory, setPriceHistory] = useState<PriceData[]>([]);
   const [connected, setConnected] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [demoMode, setDemoMode] = useState<boolean>(false);
   const [walletConnected, setWalletConnected] = useState<boolean>(false);
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [stakeAmount, setStakeAmount] = useState<string>('100');
 
   useEffect(() => {
-    const socketConnection = io('http://localhost:5001');
+    const apiUrl = process.env.REACT_APP_WEBSOCKET_URL || 'http://localhost:5001';
+
+    // Check if we're in production without a backend (Netlify demo mode)
+    const isProductionDemo = process.env.NODE_ENV === 'production' && apiUrl.includes('localhost');
+
+    if (isProductionDemo) {
+      // Enable demo mode with mock data
+      setDemoMode(true);
+      setConnected(false);
+      setCurrentPrice(1.2345);
+      setLoading(false);
+
+      // Generate mock price history
+      const mockHistory = [];
+      const now = Date.now();
+      for (let i = 100; i >= 0; i--) {
+        const timestamp = now - (i * 60000);
+        const randomPrice = 1.0 + (Math.random() - 0.5) * 0.5;
+        mockHistory.push({
+          timestamp,
+          price: parseFloat(randomPrice.toFixed(4)),
+          volume24h: Math.random() * 1000000,
+          change24h: (Math.random() - 0.5) * 20,
+        });
+      }
+      setPriceHistory(mockHistory);
+
+      // Mock price updates every 5 seconds
+      const interval = setInterval(() => {
+        const newPrice = 1.0 + (Math.random() - 0.5) * 0.5;
+        setCurrentPrice(parseFloat(newPrice.toFixed(4)));
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }
+
+    // Normal WebSocket connection
+    const socketConnection = io(apiUrl);
 
     socketConnection.on('connect', () => {
       setConnected(true);
+      setDemoMode(false);
       console.log('Connected to Neureal server!');
     });
 
     socketConnection.on('disconnect', () => {
       setConnected(false);
       console.log('Disconnected from server');
+    });
+
+    socketConnection.on('connect_error', () => {
+      console.log('Connection failed, enabling demo mode');
+      setDemoMode(true);
+      setConnected(false);
+      setLoading(false);
     });
 
     socketConnection.on('initial_data', (data: any) => {
@@ -130,10 +176,10 @@ function SimpleApp() {
                   width: '8px',
                   height: '8px',
                   borderRadius: '50%',
-                  backgroundColor: connected ? '#10b981' : '#ef4444'
+                  backgroundColor: connected ? '#10b981' : demoMode ? '#f59e0b' : '#ef4444'
                 }} />
                 <span style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)' }}>
-                  {connected ? 'Connected' : 'Disconnected'}
+                  {connected ? 'Connected' : demoMode ? 'Demo Mode' : 'Disconnected'}
                 </span>
               </div>
 
