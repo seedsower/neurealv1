@@ -13,8 +13,8 @@
    - Choose GitHub and select `seedsower/neurealv1`
 
 2. **Build Settings**
-   - **Base directory:** `frontend`
-   - **Build command:** `npm run build`
+   - **Base directory:** Leave empty (auto-detected from netlify.toml)
+   - **Build command:** `cd frontend && npm ci --legacy-peer-deps && npm run build`
    - **Publish directory:** `frontend/build`
 
 3. **Environment Variables** (Optional for full functionality)
