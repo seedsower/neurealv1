@@ -26,8 +26,17 @@ export function Web3Provider({ children }: Web3ProviderProps) {
 
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastConnectAttempt, setLastConnectAttempt] = useState<number>(0);
 
   const connect = async () => {
+    // Rate limiting: don't attempt connection more than once every 2 seconds
+    const now = Date.now();
+    if (now - lastConnectAttempt < 2000) {
+      console.log('Connection attempt rate limited');
+      return;
+    }
+
+    setLastConnectAttempt(now);
     setIsConnecting(true);
     setError(null);
 
@@ -35,7 +44,12 @@ export function Web3Provider({ children }: Web3ProviderProps) {
       const web3Context = await connectWallet();
       setState(web3Context);
     } catch (err: any) {
-      setError(err.message || 'Failed to connect wallet');
+      // Handle rate limiting errors more gracefully
+      if (err.message?.includes('rate limited')) {
+        setError('Connection rate limited. Please wait a moment and try again.');
+      } else {
+        setError(err.message || 'Failed to connect wallet');
+      }
       console.error('Wallet connection error:', err);
     } finally {
       setIsConnecting(false);
@@ -59,10 +73,11 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     const tryAutoConnect = async () => {
       try {
         const ethereum = (window as any).ethereum;
-        if (ethereum && !state.account) {
+        if (ethereum && !state.account && !isConnecting) {
           const accounts = await ethereum.request({ method: 'eth_accounts' });
           if (accounts.length > 0) {
-            await connect();
+            // Add delay to prevent rate limiting
+            setTimeout(() => connect(), 500);
           }
         }
       } catch (err) {
@@ -70,8 +85,11 @@ export function Web3Provider({ children }: Web3ProviderProps) {
       }
     };
 
-    tryAutoConnect();
-  }, [state.account]);
+    // Only try auto-connect once on mount
+    if (!state.account && !isConnecting) {
+      tryAutoConnect();
+    }
+  }, []);
 
   // Listen for account changes
   useEffect(() => {
@@ -87,7 +105,8 @@ export function Web3Provider({ children }: Web3ProviderProps) {
 
       const handleChainChanged = () => {
         // Reconnect when chain changes instead of reloading
-        connect();
+        // Add delay to prevent rate limiting
+        setTimeout(() => connect(), 1000);
       };
 
       ethereum.on('accountsChanged', handleAccountsChanged);
