@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import detectEthereumProvider from '@metamask/detect-provider';
-import { CONTRACTS, CHAIN_CONFIG, TARGET_CHAIN_ID, NEURAL_TOKEN_ABI, NEURAL_PREDICTION_ABI } from '../config/contracts';
+import { CONTRACTS, CHAIN_CONFIG, TARGET_CHAIN_ID, NEURAL_TOKEN_ABI, NEURAL_PREDICTION_ABI, BASE_SEPOLIA_CHAIN_ID, LOCALHOST_CHAIN_ID } from '../config/contracts';
 
 export interface Web3Context {
   provider: ethers.providers.Web3Provider | null;
@@ -40,6 +40,8 @@ export async function connectWallet(): Promise<Web3Context> {
       neuralPrediction = new ethers.Contract(CONTRACTS.NEURAL_PREDICTION, NEURAL_PREDICTION_ABI, signer);
     } else {
       console.log(`Connected to chain ${network.chainId}, expected ${TARGET_CHAIN_ID}. Contracts not initialized.`);
+      console.log(`Network mode: ${process.env.REACT_APP_NETWORK_MODE}`);
+      console.log(`Base Sepolia ID: ${BASE_SEPOLIA_CHAIN_ID}, Localhost ID: ${LOCALHOST_CHAIN_ID}`);
     }
 
     return {
