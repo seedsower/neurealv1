@@ -317,8 +317,9 @@ function PredictionApp() {
             ) : (
               <>
                 <p>• You're connected but on the wrong network</p>
-                <p>• Switch to {CHAIN_CONFIG.chainName} to access the app</p>
-                <p>• Current network: {chainId ? `Chain ${chainId}` : 'Unknown'}</p>
+                <p>• Currently on: {chainId === 1 ? 'Ethereum Mainnet' : chainId === 11155111 ? 'Ethereum Sepolia' : chainId === 1337 ? 'Hardhat Localhost' : `Chain ${chainId}`}</p>
+                <p>• Required: {CHAIN_CONFIG.chainName} (Chain {TARGET_CHAIN_ID})</p>
+                <p>• Click the button above to switch networks automatically</p>
               </>
             )}
           </div>

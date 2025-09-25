@@ -62,23 +62,31 @@ export async function connectWallet(): Promise<Web3Context> {
 
 export async function switchToTargetNetwork(ethereum: any) {
   try {
+    console.log(`Attempting to switch to ${CHAIN_CONFIG.chainName} (${CHAIN_CONFIG.chainId})`);
     await ethereum.request({
       method: 'wallet_switchEthereumChain',
       params: [{ chainId: CHAIN_CONFIG.chainId }],
     });
+    console.log(`Successfully switched to ${CHAIN_CONFIG.chainName}`);
   } catch (switchError: any) {
+    console.log('Switch error:', switchError);
     // This error code indicates that the chain has not been added to MetaMask
     if (switchError.code === 4902) {
       try {
+        console.log(`Adding ${CHAIN_CONFIG.chainName} to MetaMask...`);
         await ethereum.request({
           method: 'wallet_addEthereumChain',
           params: [CHAIN_CONFIG],
         });
+        console.log(`Successfully added ${CHAIN_CONFIG.chainName}`);
       } catch (addError) {
+        console.error('Add error:', addError);
         throw new Error(`Failed to add ${CHAIN_CONFIG.chainName} network to MetaMask`);
       }
+    } else if (switchError.code === 4001) {
+      throw new Error('User rejected network switch request');
     } else {
-      throw new Error(`Failed to switch to ${CHAIN_CONFIG.chainName} network`);
+      throw new Error(`Failed to switch to ${CHAIN_CONFIG.chainName} network: ${switchError.message}`);
     }
   }
 }
