@@ -291,10 +291,14 @@ function PredictionApp() {
               try {
                 const ethereum = (window as any).ethereum;
                 if (ethereum) {
-                  await switchToTargetNetwork(ethereum);
+                  const switchSuccess = await switchToTargetNetwork(ethereum);
+                  if (switchSuccess) {
+                    // Reconnect after successful switch
+                    setTimeout(() => connect(), 500);
+                  }
                 }
               } catch (err) {
-                console.error('Failed to switch network:', err);
+                console.error('Network switch failed:', err);
               }
             }}
             disabled={isConnecting}
@@ -358,10 +362,14 @@ function PredictionApp() {
                       try {
                         const ethereum = (window as any).ethereum;
                         if (ethereum) {
-                          await switchToTargetNetwork(ethereum);
+                          const switchSuccess = await switchToTargetNetwork(ethereum);
+                          if (switchSuccess) {
+                            // Reconnect after successful switch
+                            setTimeout(() => connect(), 500);
+                          }
                         }
                       } catch (err) {
-                        console.error('Failed to switch network:', err);
+                        console.error('Network switch failed:', err);
                       }
                     }}
                     style={{

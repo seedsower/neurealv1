@@ -26,21 +26,27 @@ export async function connectWallet(): Promise<Web3Context> {
       throw new Error('No accounts found. Please unlock MetaMask.');
     }
 
+    // Get the current chain ID directly from MetaMask
+    const chainIdHex = await (ethereum as any).request({ method: 'eth_chainId' });
+    const chainId = parseInt(chainIdHex, 16);
+
+    console.log(`MetaMask chainId: ${chainId}, Expected: ${TARGET_CHAIN_ID}`);
+
     const provider = new ethers.providers.Web3Provider(ethereum as any);
     const signer = provider.getSigner();
     const account = accounts[0];
-    const network = await provider.getNetwork();
 
     // Initialize contracts only if on correct network
     let neuralToken = null;
     let neuralPrediction = null;
 
-    if (network.chainId === TARGET_CHAIN_ID) {
+    if (chainId === TARGET_CHAIN_ID) {
       neuralToken = new ethers.Contract(CONTRACTS.NEURAL_TOKEN, NEURAL_TOKEN_ABI, signer);
       neuralPrediction = new ethers.Contract(CONTRACTS.NEURAL_PREDICTION, NEURAL_PREDICTION_ABI, signer);
+      console.log('✅ Contracts initialized successfully');
     } else {
-      console.log(`Connected to chain ${network.chainId}, expected ${TARGET_CHAIN_ID}. Contracts not initialized.`);
-      console.log(`Network mode: ${process.env.REACT_APP_NETWORK_MODE}`);
+      console.log(`❌ Wrong network: Connected to ${chainId}, expected ${TARGET_CHAIN_ID}`);
+      console.log(`Network mode: production`);
       console.log(`Base Sepolia ID: ${BASE_SEPOLIA_CHAIN_ID}, Localhost ID: ${LOCALHOST_CHAIN_ID}`);
     }
 
@@ -48,7 +54,7 @@ export async function connectWallet(): Promise<Web3Context> {
       provider,
       signer,
       account,
-      chainId: network.chainId,
+      chainId: chainId,
       neuralToken,
       neuralPrediction,
     };
@@ -60,27 +66,56 @@ export async function connectWallet(): Promise<Web3Context> {
   }
 }
 
-export async function switchToTargetNetwork(ethereum: any) {
+export async function switchToTargetNetwork(ethereum: any): Promise<boolean> {
   try {
-    console.log(`Attempting to switch to ${CHAIN_CONFIG.chainName} (${CHAIN_CONFIG.chainId})`);
+    console.log(`🔄 Attempting to switch to ${CHAIN_CONFIG.chainName} (${CHAIN_CONFIG.chainId})`);
+
     await ethereum.request({
       method: 'wallet_switchEthereumChain',
       params: [{ chainId: CHAIN_CONFIG.chainId }],
     });
-    console.log(`Successfully switched to ${CHAIN_CONFIG.chainName}`);
+
+    // Wait a bit and verify the switch actually happened
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const currentChainId = await ethereum.request({ method: 'eth_chainId' });
+    const currentChainIdDecimal = parseInt(currentChainId, 16);
+
+    if (currentChainIdDecimal === TARGET_CHAIN_ID) {
+      console.log(`✅ Successfully switched to ${CHAIN_CONFIG.chainName} (${currentChainIdDecimal})`);
+      return true;
+    } else {
+      console.log(`⚠️ Switch appeared successful but still on chain ${currentChainIdDecimal}, expected ${TARGET_CHAIN_ID}`);
+      return false;
+    }
+
   } catch (switchError: any) {
-    console.log('Switch error:', switchError);
+    console.log('❌ Switch error:', switchError);
     // This error code indicates that the chain has not been added to MetaMask
     if (switchError.code === 4902) {
       try {
-        console.log(`Adding ${CHAIN_CONFIG.chainName} to MetaMask...`);
+        console.log(`➕ Adding ${CHAIN_CONFIG.chainName} to MetaMask...`);
         await ethereum.request({
           method: 'wallet_addEthereumChain',
           params: [CHAIN_CONFIG],
         });
-        console.log(`Successfully added ${CHAIN_CONFIG.chainName}`);
+
+        // Wait and verify after adding
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        const currentChainId = await ethereum.request({ method: 'eth_chainId' });
+        const currentChainIdDecimal = parseInt(currentChainId, 16);
+
+        if (currentChainIdDecimal === TARGET_CHAIN_ID) {
+          console.log(`✅ Successfully added and switched to ${CHAIN_CONFIG.chainName}`);
+          return true;
+        } else {
+          console.log(`⚠️ Network added but switch failed. Current: ${currentChainIdDecimal}, Expected: ${TARGET_CHAIN_ID}`);
+          return false;
+        }
+
       } catch (addError) {
-        console.error('Add error:', addError);
+        console.error('❌ Add error:', addError);
         throw new Error(`Failed to add ${CHAIN_CONFIG.chainName} network to MetaMask`);
       }
     } else if (switchError.code === 4001) {
