@@ -237,7 +237,8 @@ function PredictionApp() {
     );
   }
 
-  if (!account) {
+  // Show connect screen if no account or wrong network
+  if (!account || chainId !== TARGET_CHAIN_ID) {
     return (
       <div style={{ minHeight: '100vh', color: 'white', padding: '20px' }}>
         <header className="header">
@@ -259,9 +260,14 @@ function PredictionApp() {
         </header>
 
         <main className="container" style={{ paddingTop: '100px', textAlign: 'center' }}>
-          <h1 style={{ fontSize: '3rem', marginBottom: '20px' }}>Welcome to Neureal</h1>
+          <h1 style={{ fontSize: '3rem', marginBottom: '20px' }}>
+            {!account ? 'Welcome to Neureal' : 'Wrong Network'}
+          </h1>
           <p style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.7)', marginBottom: '40px' }}>
-            Predict NEURAL token price movements and earn rewards
+            {!account
+              ? 'Predict NEURAL token price movements and earn rewards'
+              : `Please switch to ${CHAIN_CONFIG.chainName} network to continue`
+            }
           </p>
 
           {web3Error && (
@@ -281,16 +287,40 @@ function PredictionApp() {
           <button
             className="btn-primary"
             style={{ fontSize: '1.2rem', padding: '15px 30px' }}
-            onClick={connect}
+            onClick={!account ? connect : async () => {
+              try {
+                const ethereum = (window as any).ethereum;
+                if (ethereum) {
+                  await switchToTargetNetwork(ethereum);
+                }
+              } catch (err) {
+                console.error('Failed to switch network:', err);
+              }
+            }}
             disabled={isConnecting}
           >
-            {isConnecting ? 'Connecting...' : 'Connect Wallet to Start'}
+            {isConnecting
+              ? 'Connecting...'
+              : !account
+                ? 'Connect Wallet to Start'
+                : `Switch to ${CHAIN_CONFIG.chainName}`
+            }
           </button>
 
           <div style={{ marginTop: '40px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)' }}>
-            <p>• Connect your wallet to Base Sepolia testnet</p>
-            <p>• Get NEURAL tokens and make predictions</p>
-            <p>• Win rewards based on accurate predictions</p>
+            {!account ? (
+              <>
+                <p>• Connect your wallet to {CHAIN_CONFIG.chainName}</p>
+                <p>• Get NEURAL tokens and make predictions</p>
+                <p>• Win rewards based on accurate predictions</p>
+              </>
+            ) : (
+              <>
+                <p>• You're connected but on the wrong network</p>
+                <p>• Switch to {CHAIN_CONFIG.chainName} to access the app</p>
+                <p>• Current network: {chainId ? `Chain ${chainId}` : 'Unknown'}</p>
+              </>
+            )}
           </div>
         </main>
       </div>

@@ -31,19 +31,16 @@ export async function connectWallet(): Promise<Web3Context> {
     const account = accounts[0];
     const network = await provider.getNetwork();
 
-    // Check if we're on the target network
-    if (network.chainId !== TARGET_CHAIN_ID) {
-      await switchToTargetNetwork(ethereum);
-      // Refresh network info after switching
-      const newNetwork = await provider.getNetwork();
-      if (newNetwork.chainId !== TARGET_CHAIN_ID) {
-        throw new Error(`Please switch to ${CHAIN_CONFIG.chainName} network`);
-      }
-    }
+    // Initialize contracts only if on correct network
+    let neuralToken = null;
+    let neuralPrediction = null;
 
-    // Initialize contracts
-    const neuralToken = new ethers.Contract(CONTRACTS.NEURAL_TOKEN, NEURAL_TOKEN_ABI, signer);
-    const neuralPrediction = new ethers.Contract(CONTRACTS.NEURAL_PREDICTION, NEURAL_PREDICTION_ABI, signer);
+    if (network.chainId === TARGET_CHAIN_ID) {
+      neuralToken = new ethers.Contract(CONTRACTS.NEURAL_TOKEN, NEURAL_TOKEN_ABI, signer);
+      neuralPrediction = new ethers.Contract(CONTRACTS.NEURAL_PREDICTION, NEURAL_PREDICTION_ABI, signer);
+    } else {
+      console.log(`Connected to chain ${network.chainId}, expected ${TARGET_CHAIN_ID}. Contracts not initialized.`);
+    }
 
     return {
       provider,
