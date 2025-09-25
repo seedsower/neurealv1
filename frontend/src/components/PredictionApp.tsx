@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { useWeb3 } from '../contexts/Web3Context';
-import { formatTokenAmount, formatPrice, parseTokenAmount, waitForTransaction, formatAddress } from '../utils/web3';
+import { formatTokenAmount, formatPrice, parseTokenAmount, waitForTransaction, formatAddress, switchToTargetNetwork } from '../utils/web3';
 import { MAX_STAKE, TARGET_CHAIN_ID, CHAIN_CONFIG } from '../config/contracts';
 
 interface RoundData {
@@ -321,6 +321,32 @@ function PredictionApp() {
                 <span style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)' }}>
                   {chainId === TARGET_CHAIN_ID ? CHAIN_CONFIG.chainName : 'Wrong Network'}
                 </span>
+                {chainId !== TARGET_CHAIN_ID && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        const ethereum = (window as any).ethereum;
+                        if (ethereum) {
+                          await switchToTargetNetwork(ethereum);
+                        }
+                      } catch (err) {
+                        console.error('Failed to switch network:', err);
+                      }
+                    }}
+                    style={{
+                      background: '#ef4444',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '4px 8px',
+                      fontSize: '0.75rem',
+                      cursor: 'pointer',
+                      marginLeft: '8px'
+                    }}
+                  >
+                    Switch to {CHAIN_CONFIG.chainName}
+                  </button>
+                )}
               </div>
 
               <div style={{

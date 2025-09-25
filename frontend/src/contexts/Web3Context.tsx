@@ -44,9 +44,15 @@ export function Web3Provider({ children }: Web3ProviderProps) {
       const web3Context = await connectWallet();
       setState(web3Context);
     } catch (err: any) {
-      // Handle rate limiting errors more gracefully
+      // Handle different types of errors more gracefully
       if (err.message?.includes('rate limited')) {
         setError('Connection rate limited. Please wait a moment and try again.');
+      } else if (err.message?.includes('switch to') || err.message?.includes('network')) {
+        setError(`Network error: ${err.message}. Please check your wallet network settings.`);
+      } else if (err.message?.includes('MetaMask not found')) {
+        setError('MetaMask not detected. Please install MetaMask to use this app.');
+      } else if (err.message?.includes('rejected')) {
+        setError('Connection rejected by user.');
       } else {
         setError(err.message || 'Failed to connect wallet');
       }
