@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { connectWallet, Web3Context as Web3ContextType } from '../utils/web3';
 
 interface Web3ProviderProps {
@@ -28,7 +28,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
   const [error, setError] = useState<string | null>(null);
   const [lastConnectAttempt, setLastConnectAttempt] = useState<number>(0);
 
-  const connect = async () => {
+  const connect = useCallback(async () => {
     // Rate limiting: don't attempt connection more than once every 2 seconds
     const now = Date.now();
     if (now - lastConnectAttempt < 2000) {
@@ -54,9 +54,9 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     } finally {
       setIsConnecting(false);
     }
-  };
+  }, [lastConnectAttempt]);
 
-  const disconnect = () => {
+  const disconnect = useCallback(() => {
     setState({
       provider: null,
       signer: null,
@@ -66,7 +66,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
       neuralPrediction: null,
     });
     setError(null);
-  };
+  }, []);
 
   // Auto-connect if already connected
   useEffect(() => {
@@ -89,7 +89,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     if (!state.account && !isConnecting) {
       tryAutoConnect();
     }
-  }, []);
+  }, [state.account, isConnecting, connect]);
 
   // Listen for account changes
   useEffect(() => {
@@ -117,7 +117,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
         ethereum.removeListener('chainChanged', handleChainChanged);
       };
     }
-  }, [state.account]);
+  }, [state.account, connect, disconnect]);
 
   const value: Web3State = {
     ...state,
