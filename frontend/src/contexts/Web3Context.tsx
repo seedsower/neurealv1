@@ -59,7 +59,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     const tryAutoConnect = async () => {
       try {
         const ethereum = (window as any).ethereum;
-        if (ethereum) {
+        if (ethereum && !state.account) {
           const accounts = await ethereum.request({ method: 'eth_accounts' });
           if (accounts.length > 0) {
             await connect();
@@ -71,7 +71,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     };
 
     tryAutoConnect();
-  }, []);
+  }, [state.account]);
 
   // Listen for account changes
   useEffect(() => {
@@ -86,8 +86,8 @@ export function Web3Provider({ children }: Web3ProviderProps) {
       };
 
       const handleChainChanged = () => {
-        // Reload the page when chain changes
-        window.location.reload();
+        // Reconnect when chain changes instead of reloading
+        connect();
       };
 
       ethereum.on('accountsChanged', handleAccountsChanged);

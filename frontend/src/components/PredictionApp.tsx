@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { useWeb3 } from '../contexts/Web3Context';
 import { formatTokenAmount, formatPrice, parseTokenAmount, waitForTransaction, formatAddress } from '../utils/web3';
-import { MAX_STAKE } from '../config/contracts';
+import { MAX_STAKE, TARGET_CHAIN_ID, CHAIN_CONFIG } from '../config/contracts';
 
 interface RoundData {
   startTime: number;
@@ -158,18 +158,20 @@ function PredictionApp() {
       await waitForTransaction(tx);
 
       // Refresh data
-      const [newBalance, newStats] = await Promise.all([
-        neuralToken!.balanceOf(account),
-        neuralPrediction!.getUserStats(account),
-      ]);
+      if (neuralToken && neuralPrediction && account) {
+        const [newBalance, newStats] = await Promise.all([
+          neuralToken.balanceOf(account),
+          neuralPrediction.getUserStats(account),
+        ]);
 
-      setTokenBalance(newBalance);
-      setUserStats({
-        totalStaked: newStats.totalStaked,
-        totalWinnings: newStats.totalWinnings,
-        winStreak: newStats.winStreak,
-        activePredictions: newStats.activePredictions,
-      });
+        setTokenBalance(newBalance);
+        setUserStats({
+          totalStaked: newStats.totalStaked,
+          totalWinnings: newStats.totalWinnings,
+          winStreak: newStats.winStreak,
+          activePredictions: newStats.activePredictions,
+        });
+      }
 
       // Refresh round data
       if (currentRound > 0) {
@@ -314,10 +316,10 @@ function PredictionApp() {
                   width: '8px',
                   height: '8px',
                   borderRadius: '50%',
-                  backgroundColor: chainId === 84532 ? '#10b981' : '#ef4444'
+                  backgroundColor: chainId === TARGET_CHAIN_ID ? '#10b981' : '#ef4444'
                 }} />
                 <span style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)' }}>
-                  {chainId === 84532 ? 'Base Sepolia' : 'Wrong Network'}
+                  {chainId === TARGET_CHAIN_ID ? CHAIN_CONFIG.chainName : 'Wrong Network'}
                 </span>
               </div>
 
@@ -353,7 +355,7 @@ function PredictionApp() {
             <div>
               <h1 className="text-3xl font-bold gradient-text">NEURAL Price</h1>
               <p style={{ color: 'rgba(255,255,255,0.7)', marginTop: '8px' }}>
-                Live from Base Sepolia
+                Live from {CHAIN_CONFIG.chainName}
               </p>
             </div>
             <div style={{ textAlign: 'right' }}>

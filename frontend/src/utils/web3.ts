@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import detectEthereumProvider from '@metamask/detect-provider';
-import { CONTRACTS, CHAIN_CONFIG, BASE_SEPOLIA_CHAIN_ID, NEURAL_TOKEN_ABI, NEURAL_PREDICTION_ABI } from '../config/contracts';
+import { CONTRACTS, CHAIN_CONFIG, TARGET_CHAIN_ID, NEURAL_TOKEN_ABI, NEURAL_PREDICTION_ABI } from '../config/contracts';
 
 export interface Web3Context {
   provider: ethers.providers.Web3Provider | null;
@@ -31,13 +31,13 @@ export async function connectWallet(): Promise<Web3Context> {
     const account = accounts[0];
     const network = await provider.getNetwork();
 
-    // Check if we're on Base Sepolia
-    if (network.chainId !== BASE_SEPOLIA_CHAIN_ID) {
-      await switchToBaseSepolia(ethereum);
+    // Check if we're on the target network
+    if (network.chainId !== TARGET_CHAIN_ID) {
+      await switchToTargetNetwork(ethereum);
       // Refresh network info after switching
       const newNetwork = await provider.getNetwork();
-      if (newNetwork.chainId !== BASE_SEPOLIA_CHAIN_ID) {
-        throw new Error('Please switch to Base Sepolia network');
+      if (newNetwork.chainId !== TARGET_CHAIN_ID) {
+        throw new Error(`Please switch to ${CHAIN_CONFIG.chainName} network`);
       }
     }
 
@@ -61,7 +61,7 @@ export async function connectWallet(): Promise<Web3Context> {
   }
 }
 
-export async function switchToBaseSepolia(ethereum: any) {
+export async function switchToTargetNetwork(ethereum: any) {
   try {
     await ethereum.request({
       method: 'wallet_switchEthereumChain',
@@ -76,10 +76,10 @@ export async function switchToBaseSepolia(ethereum: any) {
           params: [CHAIN_CONFIG],
         });
       } catch (addError) {
-        throw new Error('Failed to add Base Sepolia network to MetaMask');
+        throw new Error(`Failed to add ${CHAIN_CONFIG.chainName} network to MetaMask`);
       }
     } else {
-      throw new Error('Failed to switch to Base Sepolia network');
+      throw new Error(`Failed to switch to ${CHAIN_CONFIG.chainName} network`);
     }
   }
 }
