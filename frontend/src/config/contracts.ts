@@ -7,43 +7,27 @@ const MAINNET_CONTRACTS = {
   NEURAL_PREDICTION: "0x003B8992Af914913562E5508f2d66Aa184D5958C"
 };
 
-const LOCALHOST_CONTRACTS = {
-  NEURAL_TOKEN: "0x5FbDB2315678afecb367f032d93F642f64180aa3", // Local deployment
-  NEURAL_PREDICTION: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512" // Local deployment
+// const LOCALHOST_CONTRACTS = {
+//   NEURAL_TOKEN: "0x5FbDB2315678afecb367f032d93F642f64180aa3", // Local deployment
+//   NEURAL_PREDICTION: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512" // Local deployment
+// };
+
+// Always use production (Base Sepolia) contracts
+export const CONTRACTS = MAINNET_CONTRACTS;
+
+export const CHAIN_CONFIG = {
+  chainId: `0x${BASE_SEPOLIA_CHAIN_ID.toString(16)}`,
+  chainName: "Base Sepolia",
+  nativeCurrency: {
+    name: "Ethereum",
+    symbol: "ETH",
+    decimals: 18,
+  },
+  rpcUrls: ["https://sepolia.base.org"],
+  blockExplorerUrls: ["https://sepolia.basescan.org"],
 };
 
-// Use localhost contracts in development mode
-export const CONTRACTS = process.env.REACT_APP_NETWORK_MODE === 'development'
-  ? LOCALHOST_CONTRACTS
-  : MAINNET_CONTRACTS;
-
-export const CHAIN_CONFIG = process.env.REACT_APP_NETWORK_MODE === 'development'
-  ? {
-      chainId: `0x${LOCALHOST_CHAIN_ID.toString(16)}`,
-      chainName: "Hardhat Localhost",
-      nativeCurrency: {
-        name: "Ethereum",
-        symbol: "ETH",
-        decimals: 18,
-      },
-      rpcUrls: ["http://127.0.0.1:8545"],
-      blockExplorerUrls: [],
-    }
-  : {
-      chainId: `0x${BASE_SEPOLIA_CHAIN_ID.toString(16)}`,
-      chainName: "Base Sepolia",
-      nativeCurrency: {
-        name: "Ethereum",
-        symbol: "ETH",
-        decimals: 18,
-      },
-      rpcUrls: ["https://sepolia.base.org"],
-      blockExplorerUrls: ["https://sepolia.basescan.org"],
-    };
-
-export const TARGET_CHAIN_ID = process.env.REACT_APP_NETWORK_MODE === 'development'
-  ? LOCALHOST_CHAIN_ID
-  : BASE_SEPOLIA_CHAIN_ID;
+export const TARGET_CHAIN_ID = BASE_SEPOLIA_CHAIN_ID;
 
 export const NEURAL_TOKEN_ABI = [
   "function name() view returns (string)",

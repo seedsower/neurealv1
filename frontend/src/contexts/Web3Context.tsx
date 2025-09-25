@@ -26,17 +26,10 @@ export function Web3Provider({ children }: Web3ProviderProps) {
 
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastConnectAttempt, setLastConnectAttempt] = useState<number>(0);
 
   const connect = useCallback(async () => {
-    // Rate limiting: don't attempt connection more than once every 2 seconds
-    const now = Date.now();
-    if (now - lastConnectAttempt < 2000) {
-      console.log('Connection attempt rate limited');
-      return;
-    }
+    if (isConnecting) return; // Prevent multiple simultaneous connection attempts
 
-    setLastConnectAttempt(now);
     setIsConnecting(true);
     setError(null);
 
@@ -45,9 +38,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
       setState(web3Context);
     } catch (err: any) {
       // Handle different types of errors more gracefully
-      if (err.message?.includes('rate limited')) {
-        setError('Connection rate limited. Please wait a moment and try again.');
-      } else if (err.message?.includes('switch to') || err.message?.includes('network')) {
+      if (err.message?.includes('switch to') || err.message?.includes('network')) {
         setError(`Network error: ${err.message}. Please check your wallet network settings.`);
       } else if (err.message?.includes('MetaMask not found')) {
         setError('MetaMask not detected. Please install MetaMask to use this app.');
@@ -60,7 +51,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     } finally {
       setIsConnecting(false);
     }
-  }, [lastConnectAttempt]);
+  }, [isConnecting]);
 
   const disconnect = useCallback(() => {
     setState({
@@ -82,8 +73,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
         if (ethereum && !state.account && !isConnecting) {
           const accounts = await ethereum.request({ method: 'eth_accounts' });
           if (accounts.length > 0) {
-            // Add delay to prevent rate limiting
-            setTimeout(() => connect(), 500);
+            connect();
           }
         }
       } catch (err) {
@@ -111,8 +101,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
 
       const handleChainChanged = () => {
         // Reconnect when chain changes instead of reloading
-        // Add delay to prevent rate limiting
-        setTimeout(() => connect(), 1000);
+        connect();
       };
 
       ethereum.on('accountsChanged', handleAccountsChanged);
