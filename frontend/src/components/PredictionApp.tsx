@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { useWeb3 } from '../contexts/Web3Context';
 import { formatTokenAmount, formatPrice, parseTokenAmount, waitForTransaction, formatAddress, switchToTargetNetwork } from '../utils/web3';
-import { MAX_STAKE, TARGET_CHAIN_ID, CHAIN_CONFIG } from '../config/contracts';
+import { TARGET_CHAIN_ID, CHAIN_CONFIG, MAX_STAKE } from '../config/contracts';
 import WalletModal from './WalletModal';
 
 interface RoundData {
@@ -62,10 +62,10 @@ function PredictionApp() {
           balance,
           allowance,
         ] = await Promise.all([
-          neuralPrediction.currentPrice(),
-          neuralPrediction.currentRound(),
-          neuralToken.balanceOf(account),
-          neuralToken.allowance(account, neuralPrediction.address),
+          neuralPrediction!.currentPrice(),
+          neuralPrediction!.currentRound(),
+          neuralToken!.balanceOf(account!),
+          neuralToken!.allowance(account!, neuralPrediction!.address),
         ]);
 
         setCurrentPrice(priceData);

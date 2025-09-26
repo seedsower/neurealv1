@@ -12,7 +12,7 @@ export interface Web3Context {
 }
 
 export async function connectWallet(): Promise<Web3Context> {
-  const ethereum = await detectEthereumProvider();
+  const ethereum = await detectEthereumProvider() as any;
 
   if (!ethereum) {
     throw new Error('MetaMask not found. Please install MetaMask to continue.');
@@ -20,14 +20,14 @@ export async function connectWallet(): Promise<Web3Context> {
 
   try {
     // Request account access
-    const accounts = await (ethereum as any).request({ method: 'eth_requestAccounts' });
+    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
 
     if (accounts.length === 0) {
       throw new Error('No accounts found. Please unlock MetaMask.');
     }
 
     // Get the current chain ID directly from MetaMask
-    const chainIdHex = await (ethereum as any).request({ method: 'eth_chainId' });
+    const chainIdHex = await ethereum.request({ method: 'eth_chainId' });
     const chainId = parseInt(chainIdHex, 16);
 
     console.log(`🔍 DEBUG - Raw chainId from MetaMask: ${chainIdHex} (hex) -> ${chainId} (decimal)`);
