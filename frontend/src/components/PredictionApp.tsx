@@ -56,6 +56,13 @@ function PredictionApp() {
         setLoading(true);
 
         // Load basic data in parallel
+        console.log('🔄 Loading contract data from Base Sepolia...', {
+          neuralToken: neuralToken!.address,
+          neuralPrediction: neuralPrediction!.address,
+          account: account!,
+          timestamp: new Date().toISOString()
+        });
+
         const [
           priceData,
           roundId,
@@ -67,6 +74,14 @@ function PredictionApp() {
           neuralToken!.balanceOf(account!),
           neuralToken!.allowance(account!, neuralPrediction!.address),
         ]);
+
+        console.log('📊 Contract data loaded:', {
+          price: priceData.toString(),
+          roundId: roundId.toString(),
+          balance: balance.toString(),
+          allowance: allowance.toString(),
+          timestamp: new Date().toISOString()
+        });
 
         setCurrentPrice(priceData);
         setCurrentRound(roundId.toNumber());
@@ -155,8 +170,11 @@ function PredictionApp() {
         throw new Error('Insufficient token balance');
       }
 
+      console.log('🎯 Making prediction:', { amount: amount.toString(), isUp, timestamp: new Date().toISOString() });
       const tx = await neuralPrediction.makePrediction(amount, isUp);
+      console.log('⏳ Transaction submitted:', tx.hash);
       await waitForTransaction(tx);
+      console.log('✅ Transaction confirmed, refreshing data...');
 
       // Refresh data
       if (neuralToken && neuralPrediction && account) {
@@ -171,6 +189,15 @@ function PredictionApp() {
           totalWinnings: newStats.totalWinnings,
           winStreak: newStats.winStreak,
           activePredictions: newStats.activePredictions,
+        });
+
+        console.log('🔄 Data refreshed after transaction:', {
+          newBalance: newBalance.toString(),
+          newStats: {
+            totalStaked: newStats.totalStaked.toString(),
+            activePredictions: newStats.activePredictions.toString()
+          },
+          timestamp: new Date().toISOString()
         });
       }
 

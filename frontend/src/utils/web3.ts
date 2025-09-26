@@ -49,7 +49,13 @@ export async function connectWallet(): Promise<Web3Context> {
     if (chainId === TARGET_CHAIN_ID) {
       neuralToken = new ethers.Contract(CONTRACTS.NEURAL_TOKEN, NEURAL_TOKEN_ABI, signer);
       neuralPrediction = new ethers.Contract(CONTRACTS.NEURAL_PREDICTION, NEURAL_PREDICTION_ABI, signer);
-      console.log('✅ Contracts initialized successfully');
+      console.log('✅ Contracts initialized successfully:', {
+        neuralToken: CONTRACTS.NEURAL_TOKEN,
+        neuralPrediction: CONTRACTS.NEURAL_PREDICTION,
+        rpcUrl: provider.connection.url,
+        blockNumber: await provider.getBlockNumber(),
+        timestamp: new Date().toISOString()
+      });
     } else {
       console.log(`❌ Wrong network: Connected to ${chainId}, expected ${TARGET_CHAIN_ID}`);
       console.log(`Network mode: production`);
