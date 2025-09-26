@@ -48,6 +48,9 @@ module.exports = {
       }
     ]
   },
+  sourcify: {
+    enabled: true
+  },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: "USD"
