@@ -46,6 +46,14 @@ function PredictionApp() {
 
   // Load contract data
   useEffect(() => {
+    console.log('🌍 Environment Check:', {
+      NODE_ENV: process.env.NODE_ENV,
+      REACT_APP_NETWORK_MODE: process.env.REACT_APP_NETWORK_MODE,
+      hostname: window.location.hostname,
+      userAgent: navigator.userAgent,
+      timestamp: new Date().toISOString()
+    });
+
     if (!neuralToken || !neuralPrediction || !account) {
       setLoading(false);
       return;
@@ -141,7 +149,7 @@ function PredictionApp() {
       await waitForTransaction(tx);
 
       // Refresh allowance
-      const newAllowance = await neuralToken.allowance(account, neuralPrediction.address);
+      const newAllowance = await neuralToken!.allowance(account!, neuralPrediction!.address);
       setTokenAllowance(newAllowance);
     } catch (err: any) {
       console.error('Approval error:', err);
@@ -179,8 +187,8 @@ function PredictionApp() {
       // Refresh data
       if (neuralToken && neuralPrediction && account) {
         const [newBalance, newStats] = await Promise.all([
-          neuralToken.balanceOf(account),
-          neuralPrediction.getUserStats(account),
+          neuralToken!.balanceOf(account!),
+          neuralPrediction!.getUserStats(account!),
         ]);
 
         setTokenBalance(newBalance);

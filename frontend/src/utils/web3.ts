@@ -20,14 +20,14 @@ export async function connectWallet(): Promise<Web3Context> {
 
   try {
     // Request account access
-    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+    const accounts = await (ethereum as any).request({ method: 'eth_requestAccounts' });
 
     if (accounts.length === 0) {
       throw new Error('No accounts found. Please unlock MetaMask.');
     }
 
     // Get the current chain ID directly from MetaMask
-    const chainIdHex = await ethereum.request({ method: 'eth_chainId' });
+    const chainIdHex = await (ethereum as any).request({ method: 'eth_chainId' });
     const chainId = parseInt(chainIdHex, 16);
 
     console.log(`🔍 DEBUG - Raw chainId from MetaMask: ${chainIdHex} (hex) -> ${chainId} (decimal)`);
@@ -38,6 +38,12 @@ export async function connectWallet(): Promise<Web3Context> {
     const provider = new ethers.providers.Web3Provider(ethereum as any);
     const network = await provider.getNetwork();
     console.log(`⚡ Ethers provider says chainId: ${network.chainId}`);
+    console.log(`🔗 RPC Provider details:`, {
+      url: provider.connection?.url || 'MetaMask internal',
+      chainId: network.chainId,
+      name: network.name,
+      ensAddress: network.ensAddress,
+    });
 
     const signer = provider.getSigner();
     const account = accounts[0];
@@ -49,11 +55,14 @@ export async function connectWallet(): Promise<Web3Context> {
     if (chainId === TARGET_CHAIN_ID) {
       neuralToken = new ethers.Contract(CONTRACTS.NEURAL_TOKEN, NEURAL_TOKEN_ABI, signer);
       neuralPrediction = new ethers.Contract(CONTRACTS.NEURAL_PREDICTION, NEURAL_PREDICTION_ABI, signer);
+      const blockNumber = await provider.getBlockNumber();
       console.log('✅ Contracts initialized successfully:', {
         neuralToken: CONTRACTS.NEURAL_TOKEN,
         neuralPrediction: CONTRACTS.NEURAL_PREDICTION,
-        rpcUrl: provider.connection.url,
-        blockNumber: await provider.getBlockNumber(),
+        rpcUrl: provider.connection?.url || 'MetaMask internal RPC',
+        blockNumber: blockNumber,
+        network: network.name,
+        gasPrice: (await provider.getGasPrice()).toString(),
         timestamp: new Date().toISOString()
       });
     } else {
@@ -82,7 +91,7 @@ export async function switchToTargetNetwork(ethereum: any): Promise<boolean> {
   try {
     console.log(`🔄 Attempting to switch to ${CHAIN_CONFIG.chainName} (${CHAIN_CONFIG.chainId})`);
 
-    await ethereum.request({
+    await (ethereum as any).request({
       method: 'wallet_switchEthereumChain',
       params: [{ chainId: CHAIN_CONFIG.chainId }],
     });
@@ -90,7 +99,7 @@ export async function switchToTargetNetwork(ethereum: any): Promise<boolean> {
     // Wait a bit and verify the switch actually happened
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const currentChainId = await ethereum.request({ method: 'eth_chainId' });
+    const currentChainId = await (ethereum as any).request({ method: 'eth_chainId' });
     const currentChainIdDecimal = parseInt(currentChainId, 16);
 
     if (currentChainIdDecimal === TARGET_CHAIN_ID) {
@@ -107,7 +116,7 @@ export async function switchToTargetNetwork(ethereum: any): Promise<boolean> {
     if (switchError.code === 4902) {
       try {
         console.log(`➕ Adding ${CHAIN_CONFIG.chainName} to MetaMask...`);
-        await ethereum.request({
+        await (ethereum as any).request({
           method: 'wallet_addEthereumChain',
           params: [CHAIN_CONFIG],
         });
@@ -115,7 +124,7 @@ export async function switchToTargetNetwork(ethereum: any): Promise<boolean> {
         // Wait and verify after adding
         await new Promise(resolve => setTimeout(resolve, 1500));
 
-        const currentChainId = await ethereum.request({ method: 'eth_chainId' });
+        const currentChainId = await (ethereum as any).request({ method: 'eth_chainId' });
         const currentChainIdDecimal = parseInt(currentChainId, 16);
 
         if (currentChainIdDecimal === TARGET_CHAIN_ID) {
