@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 import { useWeb3 } from '../contexts/Web3Context';
 import { formatTokenAmount, formatPrice, parseTokenAmount, waitForTransaction, formatAddress, switchToTargetNetwork } from '../utils/web3';
 import { MAX_STAKE, TARGET_CHAIN_ID, CHAIN_CONFIG } from '../config/contracts';
-import WalletConnector from './WalletConnector';
+import WalletModal from './WalletModal';
 
 interface RoundData {
   startTime: number;
@@ -29,7 +29,6 @@ function PredictionApp() {
     neuralToken,
     neuralPrediction,
     isConnecting,
-    error: web3Error,
     connect,
   } = useWeb3();
 
@@ -43,6 +42,7 @@ function PredictionApp() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [txPending, setTxPending] = useState<boolean>(false);
+  const [showWalletModal, setShowWalletModal] = useState<boolean>(false);
 
   // Load contract data
   useEffect(() => {
@@ -238,10 +238,8 @@ function PredictionApp() {
     );
   }
 
-  // Show connect screen if no account or wrong network
-  if (!account || chainId !== TARGET_CHAIN_ID) {
-    return <WalletConnector onConnect={connect} isConnecting={isConnecting} error={web3Error} />;
-  }
+  const isWrongNetwork = account && chainId !== TARGET_CHAIN_ID;
+  const isConnected = account && chainId === TARGET_CHAIN_ID;
 
   const { upPercent, downPercent } = getPoolPercentages();
 
@@ -257,56 +255,68 @@ function PredictionApp() {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  backgroundColor: chainId === TARGET_CHAIN_ID ? '#10b981' : '#ef4444'
-                }} />
-                <span style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)' }}>
-                  {chainId === TARGET_CHAIN_ID ? CHAIN_CONFIG.chainName : 'Wrong Network'}
-                </span>
-                {chainId !== TARGET_CHAIN_ID && (
-                  <button
-                    onClick={async () => {
-                      try {
-                        const ethereum = (window as any).ethereum;
-                        if (ethereum) {
-                          const switchSuccess = await switchToTargetNetwork(ethereum);
-                          if (switchSuccess) {
-                            // Reconnect after successful switch
-                            setTimeout(() => connect(), 500);
+              {account ? (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      backgroundColor: isConnected ? '#10b981' : '#ef4444'
+                    }} />
+                    <span style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)' }}>
+                      {isConnected ? CHAIN_CONFIG.chainName : 'Wrong Network'}
+                    </span>
+                    {isWrongNetwork && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            const ethereum = (window as any).ethereum;
+                            if (ethereum) {
+                              const switchSuccess = await switchToTargetNetwork(ethereum);
+                              if (switchSuccess) {
+                                setTimeout(() => connect(), 500);
+                              }
+                            }
+                          } catch (err) {
+                            console.error('Network switch failed:', err);
                           }
-                        }
-                      } catch (err) {
-                        console.error('Network switch failed:', err);
-                      }
-                    }}
-                    style={{
-                      background: '#ef4444',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '4px 8px',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      marginLeft: '8px'
-                    }}
-                  >
-                    Switch to {CHAIN_CONFIG.chainName}
-                  </button>
-                )}
-              </div>
+                        }}
+                        style={{
+                          background: '#ef4444',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '4px 8px',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          marginLeft: '8px'
+                        }}
+                      >
+                        Switch to {CHAIN_CONFIG.chainName}
+                      </button>
+                    )}
+                  </div>
 
-              <div style={{
-                background: 'rgba(255,255,255,0.1)',
-                padding: '8px 16px',
-                borderRadius: '8px',
-                fontSize: '0.875rem'
-              }}>
-                {formatAddress(account)}
-              </div>
+                  <div style={{
+                    background: 'rgba(255,255,255,0.1)',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem'
+                  }}>
+                    {formatAddress(account)}
+                  </div>
+                </>
+              ) : (
+                <button
+                  onClick={() => setShowWalletModal(true)}
+                  className="btn-primary"
+                  disabled={isConnecting}
+                  style={{ padding: '8px 16px', fontSize: '0.875rem' }}
+                >
+                  {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+                </button>
+              )}
             </div>
           </nav>
         </div>
@@ -371,7 +381,7 @@ function PredictionApp() {
         </section>
 
         {/* Prediction Interface */}
-        <section className="glassmorphism-card">
+        <section className="glassmorphism-card" style={{ opacity: isConnected ? 1 : 0.6 }}>
           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold" style={{ marginBottom: '8px' }}>
               Prediction Round #{currentRound}
@@ -500,7 +510,7 @@ function PredictionApp() {
             <button
               onClick={() => handlePrediction(true)}
               className="btn-up"
-              disabled={txPending || tokenAllowance.lt(parseTokenAmount(stakeAmount || '1'))}
+              disabled={!isConnected || txPending || tokenAllowance.lt(parseTokenAmount(stakeAmount || '1'))}
               style={{ opacity: (txPending || tokenAllowance.lt(parseTokenAmount(stakeAmount || '1'))) ? 0.5 : 1 }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -515,7 +525,7 @@ function PredictionApp() {
             <button
               onClick={() => handlePrediction(false)}
               className="btn-down"
-              disabled={txPending || tokenAllowance.lt(parseTokenAmount(stakeAmount || '1'))}
+              disabled={!isConnected || txPending || tokenAllowance.lt(parseTokenAmount(stakeAmount || '1'))}
               style={{ opacity: (txPending || tokenAllowance.lt(parseTokenAmount(stakeAmount || '1'))) ? 0.5 : 1 }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -550,7 +560,38 @@ function PredictionApp() {
             <p>• Rewards can be claimed after round resolution</p>
           </div>
         </section>
+
+        {!isConnected && (
+          <section className="glassmorphism-card" style={{ textAlign: 'center', marginTop: '24px' }}>
+            <h3 style={{ marginBottom: '16px', color: 'rgba(255,255,255,0.9)' }}>
+              {!account ? '🚀 Connect Your Wallet' : '⚠️ Wrong Network'}
+            </h3>
+            <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '20px' }}>
+              {!account
+                ? 'Connect your wallet to start making predictions and earning rewards'
+                : `Please switch to ${CHAIN_CONFIG.chainName} network to continue`
+              }
+            </p>
+            {!account && (
+              <button
+                onClick={() => setShowWalletModal(true)}
+                className="btn-primary"
+                disabled={isConnecting}
+                style={{ fontSize: '1.1rem', padding: '12px 24px' }}
+              >
+                {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+              </button>
+            )}
+          </section>
+        )}
       </main>
+
+      <WalletModal
+        isOpen={showWalletModal}
+        onClose={() => setShowWalletModal(false)}
+        onConnect={connect}
+        isConnecting={isConnecting}
+      />
     </div>
   );
 }
