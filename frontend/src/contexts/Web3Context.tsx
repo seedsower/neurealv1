@@ -36,16 +36,21 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     try {
       const web3Context = await connectWallet();
       setState(web3Context);
+
+      // Clear any previous errors on successful connection
+      if (web3Context.account) {
+        setError(null);
+      }
     } catch (err: any) {
       // Handle different types of errors more gracefully
-      if (err.message?.includes('switch to') || err.message?.includes('network')) {
-        setError(`Network error: ${err.message}. Please check your wallet network settings.`);
-      } else if (err.message?.includes('MetaMask not found')) {
-        setError('MetaMask not detected. Please install MetaMask to use this app.');
+      if (err.message?.includes('MetaMask not found')) {
+        setError('No Web3 wallet detected. Please install MetaMask, Coinbase Wallet, or another Web3 wallet.');
       } else if (err.message?.includes('rejected')) {
-        setError('Connection rejected by user.');
+        setError('Connection rejected by user. Please approve the connection request in your wallet.');
+      } else if (err.message?.includes('No accounts found')) {
+        setError('No accounts found. Please unlock your wallet and try again.');
       } else {
-        setError(err.message || 'Failed to connect wallet');
+        setError(`Connection failed: ${err.message || 'Unknown error'}`);
       }
       console.error('Wallet connection error:', err);
     } finally {

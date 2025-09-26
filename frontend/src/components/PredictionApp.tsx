@@ -3,6 +3,7 @@ import { ethers } from 'ethers';
 import { useWeb3 } from '../contexts/Web3Context';
 import { formatTokenAmount, formatPrice, parseTokenAmount, waitForTransaction, formatAddress, switchToTargetNetwork } from '../utils/web3';
 import { MAX_STAKE, TARGET_CHAIN_ID, CHAIN_CONFIG } from '../config/contracts';
+import WalletConnector from './WalletConnector';
 
 interface RoundData {
   startTime: number;
@@ -239,97 +240,7 @@ function PredictionApp() {
 
   // Show connect screen if no account or wrong network
   if (!account || chainId !== TARGET_CHAIN_ID) {
-    return (
-      <div style={{ minHeight: '100vh', color: 'white', padding: '20px' }}>
-        <header className="header">
-          <div className="container">
-            <nav className="nav">
-              <div className="logo">
-                <div className="logo-icon">N</div>
-                <span style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Neureal</span>
-              </div>
-              <button
-                className="btn-primary"
-                onClick={connect}
-                disabled={isConnecting}
-              >
-                {isConnecting ? 'Connecting...' : 'Connect Wallet'}
-              </button>
-            </nav>
-          </div>
-        </header>
-
-        <main className="container" style={{ paddingTop: '100px', textAlign: 'center' }}>
-          <h1 style={{ fontSize: '3rem', marginBottom: '20px' }}>
-            {!account ? 'Welcome to Neureal' : 'Wrong Network'}
-          </h1>
-          <p style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.7)', marginBottom: '40px' }}>
-            {!account
-              ? 'Predict NEURAL token price movements and earn rewards'
-              : `Please switch to ${CHAIN_CONFIG.chainName} network to continue`
-            }
-          </p>
-
-          {web3Error && (
-            <div style={{
-              background: 'rgba(239, 68, 68, 0.2)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: '12px',
-              padding: '16px',
-              marginBottom: '20px',
-              maxWidth: '500px',
-              margin: '0 auto 20px'
-            }}>
-              <p style={{ color: '#f87171' }}>{web3Error}</p>
-            </div>
-          )}
-
-          <button
-            className="btn-primary"
-            style={{ fontSize: '1.2rem', padding: '15px 30px' }}
-            onClick={!account ? connect : async () => {
-              try {
-                const ethereum = (window as any).ethereum;
-                if (ethereum) {
-                  const switchSuccess = await switchToTargetNetwork(ethereum);
-                  if (switchSuccess) {
-                    // Reconnect after successful switch
-                    setTimeout(() => connect(), 500);
-                  }
-                }
-              } catch (err) {
-                console.error('Network switch failed:', err);
-              }
-            }}
-            disabled={isConnecting}
-          >
-            {isConnecting
-              ? 'Connecting...'
-              : !account
-                ? 'Connect Wallet to Start'
-                : `Switch to ${CHAIN_CONFIG.chainName}`
-            }
-          </button>
-
-          <div style={{ marginTop: '40px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)' }}>
-            {!account ? (
-              <>
-                <p>• Connect your wallet to {CHAIN_CONFIG.chainName}</p>
-                <p>• Get NEURAL tokens and make predictions</p>
-                <p>• Win rewards based on accurate predictions</p>
-              </>
-            ) : (
-              <>
-                <p>• You're connected but on the wrong network</p>
-                <p>• Currently on: {chainId === 1 ? 'Ethereum Mainnet' : chainId === 11155111 ? 'Ethereum Sepolia' : chainId === 1337 ? 'Hardhat Localhost' : `Chain ${chainId}`}</p>
-                <p>• Required: {CHAIN_CONFIG.chainName} (Chain {TARGET_CHAIN_ID})</p>
-                <p>• Click the button above to switch networks automatically</p>
-              </>
-            )}
-          </div>
-        </main>
-      </div>
-    );
+    return <WalletConnector onConnect={connect} isConnecting={isConnecting} error={web3Error} />;
   }
 
   const { upPercent, downPercent } = getPoolPercentages();
