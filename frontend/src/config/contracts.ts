@@ -7,16 +7,15 @@ const MAINNET_CONTRACTS = {
   NEURAL_PREDICTION: "0x003B8992Af914913562E5508f2d66Aa184D5958C"
 };
 
-const LOCALHOST_CONTRACTS = {
-  NEURAL_TOKEN: "0x5FbDB2315678afecb367f032d93F642f64180aa3", // Local deployment
-  NEURAL_PREDICTION: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512" // Local deployment
-};
+// const LOCALHOST_CONTRACTS = {
+//   NEURAL_TOKEN: "0x5FbDB2315678afecb367f032d93F642f64180aa3", // Local deployment
+//   NEURAL_PREDICTION: "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512" // Local deployment
+// };
 
-// Use environment-based contract selection
-const isProduction = process.env.NODE_ENV === 'production' || process.env.REACT_APP_NETWORK_MODE === 'production';
-export const CONTRACTS = isProduction ? MAINNET_CONTRACTS : LOCALHOST_CONTRACTS;
+// Always use production (Base Sepolia) contracts
+export const CONTRACTS = MAINNET_CONTRACTS;
 
-const BASE_SEPOLIA_CONFIG = {
+export const CHAIN_CONFIG = {
   chainId: `0x${BASE_SEPOLIA_CHAIN_ID.toString(16)}`,
   chainName: "Base Sepolia",
   nativeCurrency: {
@@ -28,20 +27,7 @@ const BASE_SEPOLIA_CONFIG = {
   blockExplorerUrls: ["https://sepolia.basescan.org"],
 };
 
-const LOCALHOST_CONFIG = {
-  chainId: `0x${LOCALHOST_CHAIN_ID.toString(16)}`,
-  chainName: "Hardhat Localhost",
-  nativeCurrency: {
-    name: "Ethereum",
-    symbol: "ETH",
-    decimals: 18,
-  },
-  rpcUrls: ["http://127.0.0.1:8545"],
-  blockExplorerUrls: ["http://localhost:8545"],
-};
-
-export const CHAIN_CONFIG = isProduction ? BASE_SEPOLIA_CONFIG : LOCALHOST_CONFIG;
-export const TARGET_CHAIN_ID = isProduction ? BASE_SEPOLIA_CHAIN_ID : LOCALHOST_CHAIN_ID;
+export const TARGET_CHAIN_ID = BASE_SEPOLIA_CHAIN_ID;
 
 export const NEURAL_TOKEN_ABI = [
   "function name() view returns (string)",
