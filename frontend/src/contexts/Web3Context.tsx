@@ -33,13 +33,23 @@ export function Web3Provider({ children }: Web3ProviderProps) {
     setIsConnecting(true);
     setError(null);
 
+    console.log('🚀 Starting wallet connection...');
+
     try {
+      // Clear any cached provider state
+      if ((window as any).ethereum) {
+        console.log('🔄 Refreshing MetaMask connection...');
+        // Force MetaMask to refresh its state
+        await (window as any).ethereum.request({ method: 'eth_requestAccounts' });
+      }
+
       const web3Context = await connectWallet();
       setState(web3Context);
 
       // Clear any previous errors on successful connection
       if (web3Context.account) {
         setError(null);
+        console.log('✅ Wallet connected successfully!');
       }
     } catch (err: any) {
       // Handle different types of errors more gracefully

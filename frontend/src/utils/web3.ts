@@ -30,9 +30,15 @@ export async function connectWallet(): Promise<Web3Context> {
     const chainIdHex = await (ethereum as any).request({ method: 'eth_chainId' });
     const chainId = parseInt(chainIdHex, 16);
 
-    console.log(`MetaMask chainId: ${chainId}, Expected: ${TARGET_CHAIN_ID}`);
+    console.log(`🔍 DEBUG - Raw chainId from MetaMask: ${chainIdHex} (hex) -> ${chainId} (decimal)`);
+    console.log(`🎯 Expected chainId: ${TARGET_CHAIN_ID}`);
+    console.log(`🦊 MetaMask detected: ${(ethereum as any).isMetaMask}`);
 
+    // Also check what the ethers provider says
     const provider = new ethers.providers.Web3Provider(ethereum as any);
+    const network = await provider.getNetwork();
+    console.log(`⚡ Ethers provider says chainId: ${network.chainId}`);
+
     const signer = provider.getSigner();
     const account = accounts[0];
 
